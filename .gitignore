@@ -1,0 +1,21 @@
+# 账号数据：绝不能进仓库（含手机号、app_token、设备指纹 xk）
+cmcc_accounts.json
+app_token.json
+cmcc_web_store.json
+data/
+
+# 本地运行产物
+logs/
+__pycache__/
+*.pyc
+*.pyo
+
+# 环境变量（可能含镜像地址/凭据）
+.env
+
+# 系统垃圾
+.DS_Store
+Thumbs.db
+
+# AI 工作区缓存，不入库
+.workbuddy-ai/

@@ -1,0 +1,21 @@
+# 统一按 LF 入库：entrypoint.sh 若变成 CRLF，Linux 上会报
+# "exec /app/entrypoint.sh: no such file or directory"
+* text=auto eol=lf
+
+*.sh      text eol=lf
+Dockerfile text eol=lf
+*.yml     text eol=lf
+*.yaml    text eol=lf
+*.py      text eol=lf
+*.txt     text eol=lf
+.dockerignore text eol=lf
+.gitignore    text eol=lf
+.gitattributes text eol=lf
+
+# 二进制
+*.doc     binary
+*.docx    binary
+*.png     binary
+*.jpg     binary
+*.gz      binary
+*.tar     binary

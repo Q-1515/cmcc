@@ -1,0 +1,579 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>CMCC 账号工作台</title>
+<style>
+  :root{
+    --bg:#f4f5f7; --card:#fff; --line:#e6e8ec; --line2:#eef0f3;
+    --tx:#1c1f23; --tx2:#5b6068; --tx3:#949aa3;
+    --pink:#d6336c; --pink-d:#b82a5b; --pink-bg:#fdeef3;
+    --green:#2f9e44; --green-bg:#e9f7ec;
+    --amber:#b8860b; --amber-bg:#fdf6e3;
+    --red:#c92a2a; --red-bg:#fdeded;
+    --code:#1f2430; --code-tx:#d7dce5;
+  }
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--tx);font:13px/1.6 -apple-system,BlinkMacSystemFont,"Segoe UI","Microsoft YaHei",sans-serif}
+  .wrap{max-width:1240px;margin:0 auto;padding:26px 20px 48px}
+  .mono{font-family:ui-monospace,SFMono-Regular,Consolas,monospace}
+
+  .top{display:flex;align-items:center;gap:14px;margin-bottom:14px}
+  .top h1{font-size:19px;font-weight:600;margin:0;letter-spacing:.5px}
+  .top .sp{flex:1}
+  .stats{display:flex;gap:20px;margin:0 0 16px;font-size:12px;color:var(--tx2)}
+  .stats b{font-weight:500;color:var(--tx)}
+  .stats .ok{color:var(--green)} .stats .pend{color:var(--amber)} .stats .inv{color:var(--red)}
+
+  .panel{background:var(--card);border:1px solid var(--line);border-radius:10px;padding:16px 18px;margin-bottom:16px}
+  .panel h2{font-size:14px;font-weight:600;margin:0;display:flex;align-items:center;gap:8px}
+  .panel h2 .sub{font-weight:400;color:var(--tx3);font-size:12px}
+  .panel .head{display:flex;align-items:center;gap:10px;margin-bottom:14px}
+  .panel .head .sp{flex:1}
+
+  button{font:inherit;border:1px solid var(--line);background:#fff;color:var(--tx);border-radius:6px;
+         padding:6px 12px;cursor:pointer;transition:.15s}
+  button:hover:not(:disabled){border-color:#cfd3d9;background:#fafbfc}
+  button:disabled{opacity:.5;cursor:not-allowed}
+  button.pink{background:var(--pink);border-color:var(--pink);color:#fff}
+  button.pink:hover:not(:disabled){background:var(--pink-d);border-color:var(--pink-d)}
+  button.sm{padding:4px 10px;font-size:12px}
+  button.ghost{color:var(--tx2)}
+  .link{color:var(--tx2);cursor:pointer;font-size:12px}
+  .link:hover{color:var(--pink);text-decoration:underline}
+
+  .toolbar{display:flex;gap:10px;align-items:center;margin-bottom:12px;flex-wrap:wrap}
+  .toolbar input[type=text],.toolbar select{border:1px solid var(--line);border-radius:6px;padding:7px 10px;font:inherit;background:#fff}
+  .toolbar input[type=text]{flex:1;min-width:200px}
+  .grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(228px,1fr));gap:12px}
+  .acct{border:1px solid var(--line);border-radius:9px;padding:11px 12px;background:#fff;transition:.15s}
+  .acct:hover{box-shadow:0 1px 4px rgba(0,0,0,.07);border-color:#d9dce1}
+  .acct.sel{border-color:var(--pink);box-shadow:0 0 0 2px var(--pink-bg)}
+  .acct .row1{display:flex;align-items:center;gap:8px;margin-bottom:7px}
+  .avat{width:26px;height:26px;border-radius:50%;background:#eef1f5;color:#6b7280;display:flex;align-items:center;
+        justify-content:center;font-size:11px;font-weight:600;flex:none}
+  .acct .nm{font-weight:500;font-size:13px;flex:1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .dot{width:7px;height:7px;border-radius:50%;flex:none}
+  .dot.ok{background:var(--green)} .dot.pending{background:#f0b429} .dot.invalid{background:var(--red)}
+  .st{font-size:12px;color:var(--tx2);flex:none}
+  .acct .id{font-size:11px;color:var(--tx3);margin-bottom:5px}
+  .acct .oid{font-size:10px;color:var(--tx3);word-break:break-all;margin-bottom:8px;line-height:1.45}
+  .kvrow{display:flex;align-items:center;gap:6px;font-size:11px;color:var(--tx2);margin-bottom:5px}
+  .kvrow .k{width:56px;flex:none;color:var(--tx3)}
+  .bar{flex:1;height:4px;border-radius:2px;background:#eef0f3;overflow:hidden}
+  .bar i{display:block;height:100%;background:var(--green);border-radius:2px}
+  .bar i.warn{background:#f0b429} .bar i.bad{background:var(--red)}
+  .kvrow .v{flex:none;width:64px;text-align:right;font-size:11px;color:var(--tx2)}
+  .meta{font-size:10px;color:var(--tx3);margin:6px 0 9px;display:flex;gap:8px;flex-wrap:wrap}
+  .acts{display:flex;gap:6px;justify-content:flex-end}
+
+  .cols{display:grid;grid-template-columns:1fr 1.25fr .8fr;gap:16px;align-items:start}
+  @media(max-width:1080px){.cols{grid-template-columns:1fr}}
+  .col{background:var(--card);border:1px solid var(--line);border-radius:10px;padding:16px 18px}
+  .col h3{font-size:13px;font-weight:600;margin:0 0 3px}
+  .col .desc{font-size:11px;color:var(--tx3);margin-bottom:14px}
+  .fld{margin-bottom:12px}
+  .fld label{display:block;font-size:11px;color:var(--tx3);margin-bottom:4px}
+  .fld-hd{display:block;font-size:11px;color:var(--tx3);margin-bottom:4px;line-height:1.8}
+  .fld-info{margin-left:8px;font-size:11px;color:var(--green);word-break:break-all}
+  .fld input,.fld select{width:100%;border:1px solid var(--line);border-radius:6px;padding:7px 10px;font:inherit;background:#fff}
+  .fld input:focus,.fld select:focus{outline:none;border-color:var(--pink)}
+  .inline{display:flex;gap:8px;align-items:center}
+  .inline input{flex:1}
+  .rowbtns{display:flex;gap:8px;margin-top:6px;flex-wrap:wrap}
+  .codebox{background:var(--code);color:var(--code-tx);border-radius:8px;padding:13px 14px;min-height:210px;
+           font:11.5px/1.7 ui-monospace,SFMono-Regular,Consolas,monospace;white-space:pre-wrap;word-break:break-all}
+  .entry{display:block;width:100%;text-align:left;border:1px solid var(--line);border-radius:7px;padding:10px 12px;
+         margin-bottom:8px;background:#fff;cursor:pointer}
+  .entry:hover{border-color:var(--pink);background:var(--pink-bg)}
+  .entry .t{font-weight:500;font-size:12.5px}
+  .entry .d{font-size:11px;color:var(--tx3);margin-top:2px}
+  .grp{margin-top:14px;padding-top:12px;border-top:1px solid var(--line2)}
+  .grp .gt{font-size:11px;color:var(--tx2);margin-bottom:8px;display:flex;align-items:center;gap:6px}
+  .banner{border-radius:7px;padding:9px 12px;font-size:12.5px;margin-bottom:10px;display:none;white-space:pre-wrap}
+  .banner.err{background:var(--red-bg);color:var(--red);display:block}
+  .banner.tip{background:var(--amber-bg);color:var(--amber);display:block}
+  .banner.ok{background:var(--green-bg);color:var(--green);display:block}
+
+  .mask{position:fixed;inset:0;background:rgba(20,22,26,.45);display:none;align-items:center;justify-content:center;z-index:50}
+  .mask.on{display:flex}
+  .modal{background:#fff;border-radius:12px;width:min(620px,92vw);max-height:88vh;overflow:auto;padding:20px 22px}
+  .modal h3{margin:0 0 4px;font-size:15px;font-weight:600}
+  .modal .mdesc{font-size:12px;color:var(--tx3);margin-bottom:14px}
+  .modal textarea{width:100%;border:1px solid var(--line);border-radius:6px;padding:8px 10px;font:12px/1.6 ui-monospace,Consolas,monospace;resize:vertical}
+  .modal .mfoot{display:flex;gap:8px;justify-content:flex-end;margin-top:14px}
+  .tag{display:inline-block;font-size:10.5px;padding:1px 7px;border-radius:20px;border:1px solid var(--line);color:var(--tx2);background:#fafbfc}
+  .tag.ok{color:var(--green);border-color:#c9ead1;background:var(--green-bg)}
+  .tag.warn{color:var(--amber);border-color:#f0dfae;background:var(--amber-bg)}
+  .tag.bad{color:var(--red);border-color:#f2c9c9;background:var(--red-bg)}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <div class="top">
+    <h1>CMCC 账号工作台</h1>
+    <div class="sp"></div>
+  </div>
+
+  <div class="stats" id="stats">
+    账号 <b>0</b> · 可用 <b class="ok">0</b> · 待确认 <b class="pend">0</b> · 已失效 <b class="inv">0</b>
+  </div>
+
+  <div class="panel">
+    <div class="head">
+      <h2>我的账号 <span class="sub" id="accSub">显示 0/0 个账号</span></h2>
+      <div class="sp"></div>
+      <button class="sm" id="btnReload">重新加载</button>
+      <button class="sm" id="btnSms">短信登录</button>
+      <button class="sm pink" id="btnAdd">新增账号</button>
+    </div>
+
+    <div class="toolbar">
+      <input type="text" id="search" placeholder="搜索手机号">
+      <select id="filter">
+        <option value="all">全部状态</option>
+        <option value="ok">可用</option>
+        <option value="pending">待确认</option>
+        <option value="invalid">已失效</option>
+      </select>
+      <button class="sm" id="btnMgmt">▸ 账号管理</button>
+      <div style="flex:1"></div>
+      <button class="sm pink" id="btnRefreshAll">一键换票全部</button>
+    </div>
+
+    <div class="grid" id="grid"></div>
+  </div>
+
+  <div class="cols">
+    <div class="col">
+      <h3>通用配置</h3>
+      <div class="banner" id="cfgBanner"></div>
+
+      <div class="fld">
+        <label>当前账号</label>
+        <div class="inline"><input type="text" id="curAcc" value="未选择" readonly></div>
+      </div>
+
+      <div class="rowbtns">
+        <button class="sm" id="btnDel" style="color:var(--red)">删除账号</button>
+      </div>
+
+      <div class="fld">
+        <label>能力</label>
+        <select id="actSel">
+          <option value="mark">/qwhdmark 签到活动</option>
+          <option value="mark31">/qwhdhub mark31 每日签到</option>
+          <option value="gold">/qwhdhub 权益兑换</option>
+        </select>
+      </div>
+
+      <div class="fld">
+        <label>目标活动页 URL</label>
+        <input type="text" id="actUrl" placeholder="https://wx.10086.cn/qwhdhub/qwhdmark/...">
+      </div>
+
+      <div class="rowbtns">
+        <button class="pink" id="btnRun">执行调用</button>
+        <button class="ghost" id="btnClear">清空结果</button>
+      </div>
+    </div>
+
+    <div class="col">
+      <div class="head" style="margin-bottom:8px">
+        <h3>返回结果</h3>
+        <div class="sp"></div>
+        <button class="sm" id="btnCopy">复制</button>
+      </div>
+      <div class="desc" id="resDesc">等待调用</div>
+      <div class="codebox" id="resBox">选择账号并执行调用后，返回内容会显示在这里。</div>
+    </div>
+
+    <div class="col">
+      <h3>系统入口</h3>
+      <div class="desc">文档、窗口和状态</div>
+
+      <a class="entry" href="/api/docs" target="_blank">
+        <div class="t">Swagger 文档</div><div class="d">浏览全部接口与说明</div>
+      </a>
+      <a class="entry" href="/api/openapi.json" target="_blank">
+        <div class="t">OpenAPI JSON</div><div class="d">用于接口导入与调试</div>
+      </a>
+      <button class="entry" id="btnTokenFile">
+        <div class="t">票据文件</div><div class="d">查看 app_token.json 全部内容</div>
+      </button>
+      <button class="entry" id="btnManage">
+        <div class="t">账号运行管理</div><div class="d">配置账号任务、开关和轮速</div>
+      </button>
+    </div>
+  </div>
+</div>
+
+<div class="mask" id="mask">
+  <div class="modal">
+    <h3 id="maskTitle">新增账号</h3>
+    <div class="mdesc" id="maskDesc">三种填法任选其一：① 直接粘贴 xk　② 粘贴加密请求体　③ 整个 HAR。导入后可在下方卡片中「一键换票」。</div>
+    <div class="fld">
+      <label>① 抓包里的 xk（72 位左右十六进制）</label>
+      <input type="text" id="mXk" placeholder="493aad939aacb0ae...">
+    </div>
+    <div class="fld">
+      <label>② 抓包请求体原文（加密 base64，自动解密出设备参数）</label>
+      <textarea id="mBody" rows="3" placeholder="K/4FKfBN5xOGoxBFNB7FirxD75tUDZcGrLMdVL8..."></textarea>
+    </div>
+    <div class="fld">
+      <div class="fld-hd">③ 整个 HAR <label for="mFile" class="link" id="mPick" style="display:inline-block;color:var(--pink);font-size:12px;padding:6px 10px;margin-left:4px">选择文件…</label><span class="fld-info" id="mFileInfo"></span></div>
+      <textarea id="mHar" rows="3" placeholder="粘贴 HAR 全文，或点上面选择文件"></textarea>
+      <input type="file" id="mFile" style="position:absolute;left:0;top:0;width:1px;height:1px;opacity:0;overflow:hidden">
+    </div>
+    <div class="fld inline">
+      <input type="text" id="mPhone" placeholder="手机号">
+      <input type="text" id="mProv" placeholder="省 851" style="max-width:110px">
+      <input type="text" id="mCity" placeholder="市 0852" style="max-width:110px">
+    </div>
+    <div class="mfoot">
+      <button class="ghost" id="mCancel">取消</button>
+      <button class="pink" id="mOk">导入账号</button>
+    </div>
+  </div>
+</div>
+
+<div class="mask" id="smsMask">
+  <div class="modal">
+    <h3>短信登录 · 中国移动 APP</h3>
+    <div class="mdesc">① 填手机号 → 点「发送验证码」；② 收到短信后填验证码 → 点「登录并入库」。登录成功后会自动把<b>登录请求体原文</b>喂入本工作台，完成 autoLogin→SSO→appTokenLogin 并写入账号库与 app_token.json。</div>
+    <div class="fld">
+      <label>手机号</label>
+      <div class="inline">
+        <input type="text" id="smsPhone" placeholder="11 位手机号" maxlength="11">
+        <button class="pink sm" id="smsSend" style="white-space:nowrap">发送验证码</button>
+      </div>
+    </div>
+    <div class="fld">
+      <label>短信验证码</label>
+      <input type="text" id="smsCode" placeholder="6 位数字验证码" maxlength="8">
+    </div>
+    <div class="fld">
+      <label>devToken（三网登录可选；若提示 223028/214100 风控，粘贴本机抓包的 #233 devToken）</label>
+      <input type="text" id="smsDev" placeholder="可选：#233 请求体中的 devToken">
+    </div>
+    <div class="fld inline">
+      <input type="text" id="smsProv" placeholder="省 851" style="max-width:130px" value="851">
+      <input type="text" id="smsCity" placeholder="市 0852" style="max-width:130px" value="0852">
+    </div>
+    <div class="banner" id="smsBanner"></div>
+    <div class="mfoot">
+      <button class="ghost" id="smsCancel">取消</button>
+      <button class="pink" id="smsLogin">登录并入库</button>
+    </div>
+  </div>
+</div>
+
+<script>
+const $ = id => document.getElementById(id);
+const esc = s => String(s==null?'':s).replace(/[&<>]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;'}[c]));
+let ACCOUNTS = [], CUR = null, EDIT_PHONE = null;
+
+async function api(path, payload){
+  const opt = payload===undefined ? {} : {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify(payload)};
+  const r = await fetch(path, opt);
+  return r.json();
+}
+function banner(el, text, cls){ const b=$(el); b.className='banner '+(cls||'tip'); b.textContent=text||''; }
+function toast(text, cls){ banner('cfgBanner', text, cls); if(cls==='ok') setTimeout(()=>banner('cfgBanner','',''),4000); }
+
+function fmtTime(s){ return s ? String(s).replace('T',' ').slice(5,19) : '—'; }
+function relTime(s){
+  if(!s) return '—';
+  const t = new Date(String(s).replace(/-/g,'/')).getTime();
+  if(!t) return '—';
+  const m = Math.floor((Date.now()-t)/60000);
+  if(m < 1) return '刚刚';
+  if(m < 60) return m+' 分钟前';
+  if(m < 1440) return Math.floor(m/60)+' 小时前';
+  return Math.floor(m/1440)+' 天前';
+}
+function statusOf(a){ return a.status || (a.app_token_at ? 'ok' : 'pending'); }
+
+function renderStats(st){
+  $('stats').innerHTML = '账号 <b>'+st.total+'</b> · 可用 <b class="ok">'+st.ok+
+    '</b> · 待确认 <b class="pend">'+st.pending+'</b> · 已失效 <b class="inv">'+st.invalid+'</b>';
+}
+
+function renderGrid(){
+  const q = $('search').value.trim().toLowerCase();
+  const f = $('filter').value;
+  const list = ACCOUNTS.filter(a=>{
+    const st = statusOf(a);
+    if(f!=='all' && st!==f) return false;
+    if(!q) return true;
+    return ((a.phone||'')+(a.name||'')+(a.note||'')+(a.app_token||'')).toLowerCase().includes(q);
+  });
+  $('accSub').textContent = '显示 '+list.length+'/'+ACCOUNTS.length+' 个账号';
+  if(!list.length){ $('grid').innerHTML = '<div class="desc">没有匹配的账号。点右上「新增账号」导入抓包凭据。</div>'; return; }
+  $('grid').innerHTML = list.map(a=>{
+    const st = statusOf(a);
+    const label = st==='ok'?'可用':(st==='invalid'?'已失效':'待确认');
+    const cls = st==='ok'?'ok':(st==='invalid'?'invalid':'pending');
+    const pct = st==='ok'?100:(st==='invalid'?0:45);
+    const barCls = st==='ok'?'':(st==='invalid'?'bad':'warn');
+    const oid = (a.app_token||'').slice(0,42);
+    return '<div class="acct'+(CUR&&CUR.phone===a.phone?' sel':'')+'" data-ph="'+esc(a.phone)+'">' +
+      '<div class="row1"><div class="avat">'+esc((a.name||'账').slice(0,1))+'</div>' +
+        '<div class="nm" title="'+esc(a.name||'')+'">'+esc(a.name||'')+'</div>' +
+        '<span class="dot '+cls+'"></span><span class="st">'+label+'</span></div>' +
+      '<div class="id">ID: '+esc(a.phone||'')+'　'+esc(a.province_code||'')+'/'+esc(a.city_code||'')+'</div>' +
+      '<div class="oid" title="'+esc(a.app_token||'')+'">OpenID: '+esc(oid||'尚未换票')+(oid?'…':'')+'</div>' +
+      '<div class="kvrow"><span class="k">保底凭据</span><span class="bar"><i class="'+barCls+'" style="width:'+pct+'%"></i></span>' +
+        '<span class="v">'+(a.has_xk?'已绑定':'缺失')+'</span></div>' +
+      '<div class="kvrow"><span class="k">换票次数</span><span class="bar"><i class="'+barCls+'" style="width:'+Math.min(100,(a.refresh_count||0)*10)+'%"></i></span>' +
+        '<span class="v">'+(a.refresh_count||0)+' 次</span></div>' +
+      '<div class="meta"><span>扫描 '+(fmtTime(a.first_seen))+'</span><span>扫描 '+fmtTime(a.last_seen)+'</span></div>' +
+      '<div class="acts"><button class="sm" data-act="update">更新</button>' +
+        '<button class="sm" data-act="config">修改</button></div></div>';
+  }).join('');
+
+  $('grid').querySelectorAll('.acct').forEach(card=>{
+    const ph = card.dataset.ph;
+    card.onclick = e => {
+      const btn = e.target.dataset.act;
+      if(btn === 'update'){ e.stopPropagation(); select(ph); runOne(ph); return; }
+      if(btn === 'config'){ e.stopPropagation(); select(ph); openEdit(ph); return; }
+      select(ph);
+    };
+  });
+}
+
+function openEdit(ph){
+  const a = ACCOUNTS.find(x=>x.phone===ph);
+  if(!a){ toast('未找到该账号','tip'); return; }
+  $('maskTitle').textContent = '修改账号';
+  $('maskDesc').innerHTML = '正在修改账号 <b>'+esc(a.phone||'')+'</b>：'+
+    '重新填入新的 xk / 加密请求体 / HAR 即可覆盖该号的凭据；'+
+    '手机号、省、市已沿用原值，如需改手机号请直接编辑输入框。';
+  $('mXk').value    = a.xk || '';
+  $('mBody').value  = '';
+  $('mHar').value   = '';
+  $('mFileInfo').textContent=''; $('mFile').value='';
+  $('mPhone').value = a.phone || '';
+  $('mProv').value  = a.province_code || '851';
+  $('mCity').value  = a.city_code || '0852';
+  $('mOk').textContent = '保存修改';
+  EDIT_PHONE = ph;
+  $('mask').classList.add('on');
+  $('mXk').focus();
+}
+
+function select(ph){
+  CUR = ACCOUNTS.find(a=>a.phone===ph) || null;
+  if(CUR){
+    $('curAcc').value = (CUR.name || ('账号 ' + (CUR.phone||'').slice(-4))) + ' · ' + (CUR.phone||'');
+  } else {
+    $('curAcc').value = '未选择';
+  }
+  renderGrid();
+}
+
+async function refreshState(){
+  const s = await (await fetch('/api/state')).json();
+  ACCOUNTS = s.accounts || [];
+  renderStats(s.stats || {total:0,ok:0,pending:0,invalid:0});
+  renderGrid();
+  if(!$('actUrl').value) $('actUrl').value = 'https://wx.10086.cn/qwhdhub/qwhdmark/1021122301?channelId=P00000150517&yx=1569511002';
+  if(!CUR && ACCOUNTS.length) select(ACCOUNTS[0].phone);
+}
+
+async function runOne(ph){
+  if(!ph){ toast('请先选择一个账号','tip'); return; }
+  $('resDesc').textContent = '执行中…';
+  $('resBox').textContent = '正在换票：' + ph + ' …';
+  const r = await api('/api/accounts/run', {phone: ph, act_url: $('actUrl').value.trim(), verify: $('verifyChk') ? $('verifyChk').checked : true});
+  const box = (r.lines||[]).join('\n');
+  $('resBox').textContent = box + (r.app_token ? '\n\n会话票据: ' + (r.session_token||'(未签发)') : '') + (r.error ? '\n\n' + r.error : '');
+  $('resDesc').textContent = r.ok ? '调用成功 · ' + fmtTime(r.app_token_at) : '调用失败';
+  ACCOUNTS = r.accounts || ACCOUNTS;
+  renderStats(r.stats || {total:ACCOUNTS.length,ok:0,pending:0,invalid:0});
+  renderGrid();
+  if(r.ok) toast('✔ 换票成功：'+ph,'ok'); else toast('✘ 换票失败：'+(r.error||''),'err');
+}
+
+$('btnReload').onclick = refreshState;
+$('search').oninput = renderGrid;
+$('filter').onchange = renderGrid;
+$('btnAdd').onclick = ()=>{
+  EDIT_PHONE = null;
+  $('maskTitle').textContent = '新增账号';
+  $('maskDesc').textContent = '三种填法任选其一：① 直接粘贴 xk　② 粘贴加密请求体　③ 整个 HAR。导入后可在下方卡片中「一键换票」。';
+  $('mXk').value=''; $('mBody').value=''; $('mHar').value='';
+  $('mFileInfo').textContent=''; $('mFile').value='';
+  $('mPhone').value=''; $('mProv').value='851'; $('mCity').value='0852';
+  $('mOk').textContent = '导入账号';
+  $('mask').classList.add('on');
+  $('mXk').focus();
+};
+$('mCancel').onclick = ()=> $('mask').classList.remove('on');
+$('mask').onclick = e => { if(e.target.id==='mask') $('mask').classList.remove('on'); };
+function slimHar(text){
+  let har;
+  try{ har=JSON.parse(text); }
+  catch(ex){ throw new Error('不是有效的 HAR/JSON 文件（'+ex.message+'）'); }
+  const entries=(har && har.log && Array.isArray(har.log.entries)) ? har.log.entries : null;
+  if(!entries){ throw new Error('缺少 log.entries，请确认导出的是完整 HAR'); }
+  const hits=entries.filter(e=>{
+    const u=(e && e.request && e.request.url) || '';
+    return /\/uam\w*login\//i.test(u) && e.request.postData && e.request.postData.text;
+  });
+  if(!hits.length){ throw new Error('HAR 中没有带请求体的 uam*login 登录请求'); }
+  const slim=hits.map(e=>({
+    startedDateTime:e.startedDateTime || '',
+    request:{url:e.request.url, postData:{text:e.request.postData.text}},
+    response:{content:{text:((e.response && e.response.content && e.response.content.text) || '')}}
+  }));
+  return {text:JSON.stringify({log:{entries:slim}}), count:slim.length};
+}
+function fileInfo(msg,color){ const el=$('mFileInfo'); el.textContent=msg; el.style.color=color||'var(--tx3)'; }
+$('mFile').onchange = e => {
+  const inp=e.target;
+  const f=(inp.files && inp.files[0]) || null;
+  if(!f){ return; }
+  fileInfo('读取中… '+f.name);
+  const fr=new FileReader();
+  fr.onload=()=>{
+    const txt=String(fr.result||'');
+    const raw=(txt.charCodeAt(0)===0xFEFF ? txt.slice(1) : txt).trim();
+    try{
+      const s=slimHar(raw);
+      $('mHar').value=s.text;
+      fileInfo('已读取 '+f.name+' · '+((f.size||0)/1048576).toFixed(1)+'MB → 提取 '+s.count+' 条登录请求','var(--green)');
+    }catch(err){
+      fileInfo('解析失败：'+(err.message||err),'var(--pink)');
+      if(raw.length<2000000){ $('mHar').value=raw; }
+      alert('文件解析失败：'+(err.message||err)+'\n\n可改用「② 粘贴加密请求体」或「① 直接粘贴 xk」。');
+    }
+    inp.value='';
+  };
+  fr.onerror=()=>{ fileInfo('浏览器无法读取该文件','var(--pink)'); inp.value=''; alert('浏览器无法读取该文件。\n请用系统「文件」App 重新选择，或改用粘贴方式。'); };
+  fr.onabort=()=>{ fileInfo('已取消'); inp.value=''; };
+  fr.readAsText(f,'utf-8');
+};
+
+$('mOk').onclick = async ()=>{
+  const btn=$('mOk'); btn.disabled=true;
+  const isEdit = !!EDIT_PHONE;
+  try{
+    const r = await api('/api/accounts/import', {
+      xk: $('mXk').value.trim(), body_b64: $('mBody').value.trim(), har_text: $('mHar').value.trim(),
+      phone: $('mPhone').value.trim(), province: $('mProv').value.trim(), city: $('mCity').value.trim()});
+    if(r.ok){
+      ACCOUNTS = r.accounts || ACCOUNTS;
+      renderGrid();
+      $('mask').classList.remove('on');
+      const ph = (r.account && r.account.phone) || '(未填手机号)';
+      toast(isEdit ? ('已修改账号 '+ph) : ('已导入账号 '+ph+'，共 '+ACCOUNTS.length+' 个'), 'ok');
+    } else { alert(r.error || (isEdit ? '修改失败' : '导入失败')); }
+  }catch(err){ alert('请求失败：'+((err && err.message) || err)+'\n请检查网络连接，或把 HAR 精简后重试。'); }
+  finally{ btn.disabled=false; }
+};
+
+$('btnRefreshAll').onclick = async ()=>{
+  const btn=$('btnRefreshAll'); btn.disabled=true;
+  $('resDesc').textContent='批量换票中…'; $('resBox').textContent='正在为全部账号换票…';
+  try{
+    const r = await api('/api/accounts/refresh', {act_url:$('actUrl').value.trim(), verify:true});
+    $('resBox').textContent = (r.results||[]).map(x=>(x.ok?'✔ ':'✘ ')+x.phone+'  '+(x.ok?(x.app_token||'').slice(0,60)+'…':x.error)).join('\n\n');
+    $('resDesc').textContent = '完成 '+r.success+'/'+r.total+' · 写入 '+r.out_file;
+    ACCOUNTS = r.accounts || ACCOUNTS; renderStats(r.stats||{total:ACCOUNTS.length,ok:0,pending:0,invalid:0}); renderGrid();
+    toast('一键换票完成：'+r.success+'/'+r.total+' 成功','ok');
+  }finally{ btn.disabled=false; }
+};
+
+$('btnNote') && ($('btnNote').onclick = async ()=>{
+  if(!CUR){ toast('请先选择账号','tip'); return; }
+  const r = await api('/api/accounts/note', {phone:CUR.phone, note:$('note').value.trim()});
+  if(r.ok){ ACCOUNTS=r.accounts||ACCOUNTS; renderGrid(); toast('备注已保存','ok'); }
+});
+$('btnSync') && ($('btnSync').onclick = ()=> toast('已把当前账号票据同步到 app_token.json','ok'));
+$('btnPreview') && ($('btnPreview').onclick = ()=>{
+  if(!CUR){ toast('请先选择账号','tip'); return; }
+  const url = location.origin + '/api/accounts/run';
+  $('resBox').textContent = '预览链接（可用 curl 调用）：\n' + url + '\n\n等价命令：\ncurl -X POST ' + url +
+    ' -H "Content-Type: application/json" -d \'{"phone":"'+CUR.phone+'"}\'';
+  $('resDesc').textContent = '预览链接';
+});
+$('btnDel') && ($('btnDel').onclick = async ()=>{
+  if(!CUR){ toast('请先选择账号','tip'); return; }
+  if(!confirm('确认删除账号 '+CUR.phone+' ?')) return;
+  const r = await api('/api/accounts/remove', {phone:CUR.phone});
+  ACCOUNTS=r.accounts||[];
+  select(ACCOUNTS.length ? ACCOUNTS[0].phone : null);
+  renderGrid();
+  toast('账号已删除','ok');
+});
+
+$('btnRun').onclick = ()=> runOne(CUR ? CUR.phone : null);$('btnClear').onclick = ()=>{ $('resBox').textContent='选择账号并执行调用后，返回内容会显示在这里。'; $('resDesc').textContent='等待调用'; };
+$('btnCopy').onclick = async ()=>{ try{ await navigator.clipboard.writeText($('resBox').textContent); toast('已复制到剪贴板','ok'); }catch(e){ toast('复制失败','tip'); } };
+$('btnTokenFile').onclick = async ()=>{ const r=await api('/api/app-token-file'); $('resBox').textContent=r.content||'（暂无）'; $('resDesc').textContent='app_token.json'; };
+$('btnManage').onclick = ()=>{ $('resBox').textContent='账号运行管理\n\n· 一键换票全部：批量为所有账号铸造新 app_token（写入 app_token.json）\n· 单号更新：在卡片上点「更新」\n· 修改账号：在卡片上点「修改」→ 重新填 xk / 加密请求体 / HAR 覆盖该号凭据\n· 新增账号：右上角「新增账号」，填 xk / 加密请求体 / HAR 均可\n· 删除账号：python cmcc_apptoken_sim.py --remove-account <手机号>\n· 定时任务：python cmcc_apptoken_sim.py --refresh-all --verify'; $('resDesc').textContent='账号运行管理'; };
+$('btnMgmt').onclick = ()=> $('btnManage').click();
+$('btnPanel') && ($('btnPanel').onclick = ()=> toast('面板连接：未配置','tip'));
+
+function smsNote(kind, msg){ banner('smsBanner', msg, kind); }
+$('btnSms').onclick = ()=>{
+  $('smsBanner').className='banner'; $('smsBanner').textContent='';
+  if(!$('smsProv').value) $('smsProv').value='851';
+  if(!$('smsCity').value) $('smsCity').value='0852';
+  $('smsMask').classList.add('on');
+};
+$('smsCancel').onclick = ()=> $('smsMask').classList.remove('on');
+$('smsMask').onclick = e => { if(e.target.id==='smsMask') $('smsMask').classList.remove('on'); };
+
+$('smsSend').onclick = async ()=>{
+  const btn=$('smsSend'); btn.disabled=true; smsNote('tip','请求中…');
+  try{
+    const r = await api('/api/sms/send-code', {phone:$('smsPhone').value.trim()});
+    if(r.ok) smsNote('ok', '服务端已受理（HTTP '+(r.status||'')+'）'+(r.note?(' · '+r.note):'')+'，请查收短信后填入验证码');
+    else smsNote('err', '发送失败：'+(r.error||r.retDesc||'未知错误')+(r.note?('\n'+r.note):''));
+  }catch(e){ smsNote('err','请求异常：'+e); }
+  finally{ btn.disabled=false; }
+};
+
+$('smsLogin').onclick = async ()=>{
+  const btn=$('smsLogin'); btn.disabled=true; smsNote('tip','① 短信登录中…');
+  try{
+    const r = await api('/api/sms/login', {
+      phone:$('smsPhone').value.trim(), code:$('smsCode').value.trim(),
+      dev_token:$('smsDev').value.trim(), province:$('smsProv').value.trim(),
+      city:$('smsCity').value.trim(), act_url:$('actUrl').value.trim()});
+    if(!r.ok){
+      const attempts = (r.attempts||[]).map(a=> (a.path||'')+(a.code_pos?'/'+a.code_pos:'')+' → '+(a.retCode||'')+' '+(a.retDesc||'')+(a.hint?' ('+a.hint+')':'')).join('\n');
+      smsNote('err', '短信登录失败（HTTP '+(r.status||'')+'）\n'+(r.error||'')+'\n'+attempts);
+      return;
+    }
+    let out = '✔ ① 短信登录成功\n';
+    out += 'APP 会话票据: '+(r.session_token||'(未返回)')+'\n';
+    out += 'retCode: '+(r.retCode||'')+' '+(r.retDesc||'')+'\n\n';
+    const cmcc = r.cmcc||{};
+    if(cmcc.ok){
+      out += '【② 已自动入库 CMCC】\n';
+      out += (cmcc.log||[]).map(x=>'['+(x.level==='error'?'✘':'·')+'] '+x.text).join('\n')+'\n';
+      const res = cmcc.result||{};
+      out += '\napp_token: '+(res.app_token||'(见账号库)')+'\n会话票据: '+(res.session_token||'')+'\n';
+      smsNote('ok','短信登录成功，并已自动完成账号入库（app_token 已写入库与 app_token.json）');
+      toast('✔ 短信登录并入库成功：'+($('smsPhone').value.trim()),'ok');
+    } else {
+      out += '【② CMCC 入库失败】'+(cmcc.error||'')+'\n请稍后手动在「新增账号」里粘贴登录请求体原文重试。';
+      smsNote('warn','短信登录成功，但入库失败：'+(cmcc.error||''));
+    }
+    $('resBox').textContent = out;
+    $('resDesc').textContent = '短信登录 + 入库结果';
+    $('smsMask').classList.remove('on');
+    await refreshState();
+  }catch(e){ smsNote('err','请求异常：'+e); }
+  finally{ btn.disabled=false; }
+};
+
+refreshState();
+</script>
+</body>
+</html>

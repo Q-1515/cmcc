@@ -1,0 +1,43 @@
+services:
+  cmcc:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      args:
+        # 国内网络慢时，在 .env 里覆盖这两项即可，无需改 Dockerfile
+        BASE_IMAGE: ${BASE_IMAGE:-python:3.12-slim}
+        PIP_INDEX_URL: ${PIP_INDEX_URL:-https://pypi.org/simple}
+    image: cmcc-workbench:1.2.0
+    container_name: cmcc-workbench
+    restart: unless-stopped
+
+    ports:
+      # 只监听本机回环，需要局域网/公网访问再改成 "8767:8767"
+      - "127.0.0.1:8767:8767"
+
+    environment:
+      TZ: Asia/Shanghai
+      PORT: "8767"
+      HOST: 0.0.0.0
+
+    volumes:
+      # 账号库 / 票据 / 设备档案持久化，删容器不丢数据
+      - cmcc-data:/data
+
+    # 服务内部会串行打 5 个上游请求，换票接口给足超时
+    healthcheck:
+      test: ["CMD-SHELL", "curl -fsS http://127.0.0.1:8767/api/stats >/dev/null || exit 1"]
+      interval: 30s
+      timeout: 5s
+      start_period: 15s
+      retries: 3
+
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+volumes:
+  cmcc-data:
+    name: cmcc-data

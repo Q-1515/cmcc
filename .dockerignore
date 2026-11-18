@@ -1,0 +1,30 @@
+# 数据文件：必须走 /data 卷，不能打进镜像
+cmcc_accounts.json
+app_token.json
+cmcc_web_store.json
+
+# 本地运行时产物
+logs/
+__pycache__/
+*.pyc
+*.pyo
+
+# 文档 / 脚本 / 版本控制
+使用方法.doc
+install.bat
+install.sh
+.git/
+.gitignore
+.workbuddy-ai/
+
+# 容器自身配置无需进镜像
+Dockerfile
+docker-compose.yml
+docker-compose.nas.yml
+.dockerignore
+
+# CI 与本地环境文件
+.github/
+.env
+.env.example
+data/

@@ -1,0 +1,44 @@
+# NAS 部署用（拉取 GitHub Actions 构建好的镜像，不在 NAS 上构建）
+#
+# 用法：
+#   1. 同目录建 .env：CMCC_IMAGE=ghcr.io/你的用户名/cmcc-workbench:latest
+#   2. mkdir -p data
+#   3. docker compose -f docker-compose.nas.yml pull
+#      docker compose -f docker-compose.nas.yml up -d
+#
+# 群晖 Container Manager：项目 → 新增 → 选择此文件 → 部署
+
+services:
+  cmcc:
+    image: ${CMCC_IMAGE:-ghcr.io/your-github-name/cmcc-workbench:latest}
+    container_name: cmcc-workbench
+    restart: unless-stopped
+
+    ports:
+      # 左边是 NAS 上的端口，被占用就改成 18767 之类
+      - "8767:8767"
+
+    environment:
+      TZ: Asia/Shanghai
+      PORT: "8767"
+      HOST: 0.0.0.0
+      # 数据目录属主异常时可手动指定容器内的运行 UID/GID
+      # APP_UID: "1000"
+      # APP_GID: "1000"
+
+    volumes:
+      # 数据放在 compose 文件旁边的 data/ 目录，NAS 备份套件能直接备份
+      - ./data:/data
+
+    healthcheck:
+      test: ["CMD-SHELL", "curl -fsS http://127.0.0.1:8767/api/stats >/dev/null || exit 1"]
+      interval: 30s
+      timeout: 5s
+      start_period: 20s
+      retries: 3
+
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "3"
